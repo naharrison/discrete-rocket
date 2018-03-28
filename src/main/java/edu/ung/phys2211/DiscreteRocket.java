@@ -13,10 +13,19 @@ public class DiscreteRocket extends PApplet {
 	public static void main(String[] args) {
 		PApplet.main("edu.ung.phys2211.DiscreteRocket");
 	}
+
 	
-	public float bgImgX, vx, vThrow, emptyMass, blockMass;
-	public int frameRate, nTotalBlocks, nThrown;
-	public PImage bgImg, throwImg;
+	public final float vThrow = 11;
+	public final float emptyMass = 100;
+	public final int nTotalBlocks = 22;
+	public final int frameRate = 30;
+	public final int pixelsPerMeter = 120;
+	public final float blockMass = 12;
+	
+	public float bgImgX, vx, thrownBlockX;
+	public int nThrown;
+	public PImage throwImg, bgImg, errorImg;
+
 	
 	public void settings() {
 		size(1000, 600);
@@ -24,37 +33,48 @@ public class DiscreteRocket extends PApplet {
 	
 	
 	public void setup() {
-		frameRate = 20;
 		frameRate(frameRate);
-		background(250);
-		vx = 9;
-		vThrow = 23;
-		emptyMass = 100;
-		blockMass = 12;
-		nTotalBlocks = 20;
-		nThrown = 0;
 		throwImg = loadImage("figs/nh.jpg");
 		bgImg = loadImage(BGImageType.values()[new Random().nextInt(BGImageType.values().length)].getImgName());
+		errorImg = loadImage("figs/grumpySquidward.jpg");
+		vx = (float) 0.5*(((float) pixelsPerMeter)/frameRate);
+		thrownBlockX = -200;
+		nThrown = 0;
 		bgImgX = width;
 	}
 	
 	
 	public void draw() {
-		// human + sled + block stack
+		background(250);
+
+		// human + sled + blocks
 		image(throwImg, width/2 - 25, height/2 + 70, 175, 175);
 		stroke(0);
 		fill(0);
 		rect(width/2 - 25, height/2 + 245, 340, 15);
 		drawStackOfBlocks();
+		rect(thrownBlockX, height/2 + 100, 17, 17);
+		thrownBlockX += -(vThrow*pixelsPerMeter/frameRate);
 		
 		// throw button
 		stroke(20, 150, 20);
 		fill(20, 150, 20);
 		rect(width - 50, height - 50, 50, 50);
 
+		// background image
 		bgImgX = bgImgX - vx;
-		image(bgImg, bgImgX, height/4, 100, 100);
+		image(bgImg, bgImgX, 0, 140, 140);
 		if(bgImgX < - 100) updateBGImg();
+		
+		// text
+		textSize(32);
+		fill(0);
+		text(String.format("v = %3.2f", vx), 75, height - 150);
+		text(String.format("m = %3.2f", emptyMass + (nTotalBlocks - nThrown)*blockMass), 75, height - 100);
+		text(String.format("p = %3.2f", vx*(emptyMass + (nTotalBlocks - nThrown)*blockMass)), 75, height - 50);
+
+		// error image
+		if(nThrown > nTotalBlocks) image(errorImg, 0, 0, width, height);
 	}
 	
 
@@ -74,6 +94,11 @@ public class DiscreteRocket extends PApplet {
 	public void mouseClicked() {
 		if(mouseX > width - 50 && mouseY > height - 50) {
 			nThrown++;
+			thrownBlockX = width/2 - 30;
+			
+			float massBeforeThrow = emptyMass + (nTotalBlocks - nThrown + 1)*blockMass;
+			float vAfterThrow = (float) (1.0/massBeforeThrow)*(massBeforeThrow*vx + blockMass*vThrow);
+			vx = vAfterThrow;
 		}
 	}
 	
